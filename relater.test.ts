@@ -16,6 +16,7 @@ Deno.test("Relater, get related values", () => {
       { name: "u64", type: "u64" },
       { name: "f32", type: "f32" },
       { name: "f64", type: "f64" },
+      { name: "string", type: "string", size: 16 },
     ] as const,
   );
 
@@ -62,6 +63,22 @@ Deno.test("Relater, get related values", () => {
     139,
     0,
     122,
+    104,
+    101,
+    108,
+    108,
+    111,
+    32,
+    119,
+    111,
+    114,
+    108,
+    100,
+    33,
+    0,
+    0,
+    0,
+    0,
   ]);
   const obj = relater.relate(buffer.buffer);
   assertEquals(obj, {
@@ -75,6 +92,7 @@ Deno.test("Relater, get related values", () => {
     u64: 18446744073709551612n,
     f32: 3.140000104904175,
     f64: 3.141592,
+    string: "hello world!",
   });
 
   type Test = Expect<
@@ -91,6 +109,7 @@ Deno.test("Relater, get related values", () => {
         u64: bigint;
         f32: number;
         f64: number;
+        string: string;
       }
     >
   >;
@@ -109,10 +128,11 @@ Deno.test("Relater, set related values", () => {
       { name: "u64", type: "u64" },
       { name: "f32", type: "f32" },
       { name: "f64", type: "f64" },
+      { name: "string", type: "string", size: 16 },
     ] as const,
   );
 
-  const buffer = new Uint8Array(42);
+  const buffer = new Uint8Array(58);
   const obj = relater.relate(buffer.buffer);
 
   // Set!
@@ -127,6 +147,7 @@ Deno.test("Relater, set related values", () => {
     u64: 18446744073709551612n,
     f32: 3.14,
     f64: 3.141592,
+    string: "hello world!",
   });
 
   assertEquals(
@@ -174,6 +195,22 @@ Deno.test("Relater, set related values", () => {
       139,
       0,
       122,
+      104,
+      101,
+      108,
+      108,
+      111,
+      32,
+      119,
+      111,
+      114,
+      108,
+      100,
+      33,
+      0,
+      0,
+      0,
+      0,
     ]),
   );
 });

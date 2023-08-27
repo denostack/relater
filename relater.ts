@@ -85,6 +85,9 @@ function getSize(rule: RelateRule) {
   return rule.size;
 }
 
+const textDecoder = new TextDecoder();
+const textEncoder = new TextEncoder();
+
 export class Relater<T extends RelateRules> {
   constructor(
     public rules: T,
@@ -219,9 +222,25 @@ export class Relater<T extends RelateRules> {
                   ),
               }];
             }
+            case "string": {
+              return [rule.name, {
+                enumerable: true,
+                get: () => {
+                  const bytes = new Uint8Array(buffer, offset, rule.size);
+                  const found = bytes.findIndex((v) => v === 0);
+                  return textDecoder.decode(bytes.slice(0, found));
+                },
+                set: (value: string) => {
+                  const bytes = textEncoder.encode(value);
+                  const target = new Uint8Array(buffer, offset, rule.size);
+                  target.set(bytes);
+                },
+              }];
+            }
           }
 
-          throw new Error(`Unknown type: ${rule.type}`);
+          // deno-lint-ignore no-explicit-any
+          throw new Error(`Unknown type: ${(rule as any).type}`);
         }),
       ),
     );
