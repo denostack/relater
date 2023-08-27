@@ -10,4 +10,5 @@ export type {
   RelateRule,
   RelateRules,
   RelateSizeRule,
+  StringTransformer,
 } from "./relater.ts";

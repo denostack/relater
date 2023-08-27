@@ -21,14 +21,16 @@ export interface RelateFixedSizeRule {
     | "u8";
 }
 
+export interface StringTransformer {
+  encode: (value: string) => Uint8Array;
+  decode: (value: Uint8Array) => string;
+}
+
 export interface RelateSizeRule {
   name: string;
   type: "string";
   size: number;
-  transformer?: {
-    encode: (value: string) => Uint8Array;
-    decode: (value: Uint8Array) => string;
-  };
+  transformer?: StringTransformer;
 }
 
 type EstimatedType<T> = T extends
@@ -92,7 +94,7 @@ function getSize(rule: RelateRule) {
 const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
 
-const defaultStringTransformer = {
+const defaultStringTransformer: StringTransformer = {
   encode: (value: string) => textEncoder.encode(value),
   decode: (bytes: Uint8Array) => {
     const found = bytes.findIndex((v) => v === 0);
