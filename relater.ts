@@ -10,7 +10,7 @@ export interface RelateFixedSizeRule {
   name: string;
   type:
     | "f64"
-    | "float32"
+    | "f32"
     | "i64"
     | "u64"
     | "i32"
@@ -29,7 +29,7 @@ export interface RelateSizeRule {
 
 type EstimatedType<T> = T extends
   | "f64"
-  | "float32"
+  | "f32"
   | "i32"
   | "u32"
   | "i16"
@@ -46,6 +46,7 @@ type DeepWritable<TObj> = {
 };
 
 // https://stackoverflow.com/a/50375286
+// deno-lint-ignore no-explicit-any
 type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends
   ((k: infer I) => void) ? I : never;
 
@@ -70,7 +71,7 @@ function getSize(rule: RelateRule) {
     case "i64":
     case "u64":
       return 8;
-    case "float32":
+    case "f32":
     case "i32":
     case "u32":
       return 4;
@@ -112,7 +113,7 @@ export class Relater<T extends RelateRules> {
                   ),
               }];
             }
-            case "float32": {
+            case "f32": {
               return [rule.name, {
                 enumerable: true,
                 get: () => view.getFloat32(offset, this.options.littleEndian),

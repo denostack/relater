@@ -1,5 +1,7 @@
 # relater <a href="https://github.com/denostack"><img src="https://raw.githubusercontent.com/denostack/images/main/logo.svg" width="160" align="right" /></a>
 
+Relater seamlessly maps ArrayBuffer content to user-defined objects.
+
 <p>
   <a href="https://github.com/denostack/relater/actions"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/denostack/relater/ci.yml?branch=main&logo=github&style=flat-square" /></a>
   <a href="https://codecov.io/gh/denostack/relater"><img alt="Coverage" src="https://img.shields.io/codecov/c/gh/denostack/relater?style=flat-square" /></a>
@@ -10,3 +12,66 @@
   <a href="https://www.npmjs.com/package/relater"><img alt="Version" src="https://img.shields.io/npm/v/relater.svg?style=flat-square&logo=npm" /></a>
   <a href="https://npmcharts.com/compare/relater?minimal=true"><img alt="Downloads" src="https://img.shields.io/npm/dt/relater.svg?style=flat-square" /></a>
 </p>
+
+## Usage
+
+### with Deno
+
+```ts
+import { Relater } from "https://deno.land/x/relater/mod.ts";
+
+const relater = new Relater(
+  [
+    { name: "i8", type: "i8" },
+    { name: "u8", type: "u8" },
+    { name: "i32", type: "i32" },
+    { name: "u32", type: "u32" },
+    { name: "i64", type: "i64" },
+    { name: "u64", type: "u64" },
+    { name: "f32", type: "f32" },
+    { name: "f64", type: "f64" },
+  ] as const,
+);
+
+const buffer = new Uint8Array([/* ... */]);
+const obj = relater.relate(buffer.buffer);
+
+// Get Values
+console.log(obj); // { i8: 0, u8: 0, i32: 0, u32: 0, i64: 0n, u64: 0n }
+
+// Set Values
+obj.i8 = 1;
+obj.u8 = 2;
+
+console.log(buffer); // Uint8Array(8) [ 1, 2, ... ]
+```
+
+### with Node.js & Browser
+
+**Install**
+
+```bash
+npm install relater
+```
+
+```ts
+import { Relater } from "relater";
+
+// Usage is as above :-)
+```
+
+## Supported Types
+
+| Type     | JavaScript Equivalent | Description                             |
+| -------- | --------------------- | --------------------------------------- |
+| `f64`    | `number`              | 64-bit floating point number            |
+| `f32`    | `number`              | 32-bit floating point number            |
+| `i64`    | `bigint`              | 64-bit signed integer                   |
+| `u64`    | `bigint`              | 64-bit unsigned integer                 |
+| `i32`    | `number`              | 32-bit signed integer                   |
+| `u32`    | `number`              | 32-bit unsigned integer                 |
+| `i16`    | `number`              | 16-bit signed integer                   |
+| `u16`    | `number`              | 16-bit unsigned integer                 |
+| `i8`     | `number`              | 8-bit signed integer                    |
+| `u8`     | `number`              | 8-bit unsigned integer                  |
+| `string` | `string`              | String type (length is based on buffer) |

@@ -14,6 +14,8 @@ Deno.test("Relater, get related values", () => {
       { name: "u32", type: "u32" },
       { name: "i64", type: "i64" },
       { name: "u64", type: "u64" },
+      { name: "f32", type: "f32" },
+      { name: "f64", type: "f64" },
     ] as const,
   );
 
@@ -48,6 +50,18 @@ Deno.test("Relater, get related values", () => {
     255,
     255,
     252,
+    64,
+    72,
+    245,
+    195,
+    64,
+    9,
+    33,
+    250,
+    252,
+    139,
+    0,
+    122,
   ]);
   const obj = relater.relate(buffer.buffer);
   assertEquals(obj, {
@@ -59,6 +73,8 @@ Deno.test("Relater, get related values", () => {
     u32: 4294967293,
     i64: -4n,
     u64: 18446744073709551612n,
+    f32: 3.140000104904175,
+    f64: 3.141592,
   });
 
   type Test = Expect<
@@ -73,6 +89,8 @@ Deno.test("Relater, get related values", () => {
         u32: number;
         i64: bigint;
         u64: bigint;
+        f32: number;
+        f64: number;
       }
     >
   >;
@@ -89,10 +107,12 @@ Deno.test("Relater, set related values", () => {
       { name: "u32", type: "u32" },
       { name: "i64", type: "i64" },
       { name: "u64", type: "u64" },
+      { name: "f32", type: "f32" },
+      { name: "f64", type: "f64" },
     ] as const,
   );
 
-  const buffer = new Uint8Array(30);
+  const buffer = new Uint8Array(42);
   const obj = relater.relate(buffer.buffer);
 
   // Set!
@@ -105,7 +125,55 @@ Deno.test("Relater, set related values", () => {
     u32: 4294967293,
     i64: -4n,
     u64: 18446744073709551612n,
+    f32: 3.14,
+    f64: 3.141592,
   });
 
-  console.log(buffer[0]);
+  assertEquals(
+    buffer,
+    new Uint8Array([
+      255,
+      255,
+      255,
+      254,
+      255,
+      254,
+      255,
+      255,
+      255,
+      253,
+      255,
+      255,
+      255,
+      253,
+      255,
+      255,
+      255,
+      255,
+      255,
+      255,
+      255,
+      252,
+      255,
+      255,
+      255,
+      255,
+      255,
+      255,
+      255,
+      252,
+      64,
+      72,
+      245,
+      195,
+      64,
+      9,
+      33,
+      250,
+      252,
+      139,
+      0,
+      122,
+    ]),
+  );
 });
