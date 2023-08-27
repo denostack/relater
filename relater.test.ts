@@ -214,3 +214,75 @@ Deno.test("Relater, set related values", () => {
     ]),
   );
 });
+
+Deno.test("Relater, relateMany", () => {
+  const relater = new Relater(
+    [
+      { name: "i32", type: "i32" },
+    ] as const,
+  );
+
+  const buffer = new Uint8Array([
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    0,
+  ]);
+  const items = relater.relateMany(buffer.buffer);
+  assertEquals(items, [{ i32: 1 }, { i32: 2 }]);
+});
+
+Deno.test("Relater, relateMany with limit", () => {
+  const relater = new Relater(
+    [
+      { name: "i32", type: "i32" },
+    ] as const,
+  );
+
+  const buffer = new Uint8Array([
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    0,
+  ]);
+  const items = relater.relateMany(buffer.buffer, { limit: 1 });
+  assertEquals(items, [{ i32: 1 }]);
+});
+
+Deno.test("Relater, relateMany with offset", () => {
+  const relater = new Relater(
+    [
+      { name: "i32", type: "i32" },
+    ] as const,
+  );
+
+  const buffer = new Uint8Array([
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    2,
+  ]);
+  const items = relater.relateMany(buffer.buffer, { offset: 3 });
+  assertEquals(items, [{ i32: 1 }, { i32: 2 }]);
+});
