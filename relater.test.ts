@@ -286,3 +286,48 @@ Deno.test("Relater, relateMany with offset", () => {
   const items = relater.relateMany(buffer.buffer, { offset: 3 });
   assertEquals(items, [{ i32: 1 }, { i32: 2 }]);
 });
+
+Deno.test("Relater, transform string", () => {
+  const textEncoder = new TextEncoder();
+  const textDecoder = new TextDecoder();
+  const charOffset = "A".charCodeAt(0);
+  const relater = new Relater(
+    [
+      {
+        name: "string",
+        type: "string",
+        size: 8,
+        transformer: {
+          decode: (value) =>
+            textDecoder.decode(value.map((v) => v + charOffset)),
+          encode: (value) =>
+            textEncoder.encode(value).map((v) => v - charOffset),
+        },
+      },
+    ] as const,
+  );
+
+  const buffer = new Uint8Array([
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+  ]);
+  const item = relater.relate(buffer.buffer);
+
+  // Get
+  assertEquals(item, { string: "ABCDEFGH" });
+
+  // Set
+  Object.assign(item, { string: "HELLO" }); // shorter than 8
+
+  assertEquals(buffer, new Uint8Array([7, 4, 11, 11, 14, 0, 0, 0]));
+
+  Object.assign(item, { string: "HELLOHELLOHELLO" }); // longer than 8
+
+  assertEquals(buffer, new Uint8Array([7, 4, 11, 11, 14, 7, 4, 11]));
+});

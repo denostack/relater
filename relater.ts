@@ -25,6 +25,10 @@ export interface RelateSizeRule {
   name: string;
   type: "string";
   size: number;
+  transformer?: {
+    encode: (value: string) => Uint8Array;
+    decode: (value: Uint8Array) => string;
+  };
 }
 
 type EstimatedType<T> = T extends
@@ -87,6 +91,14 @@ function getSize(rule: RelateRule) {
 
 const textDecoder = new TextDecoder();
 const textEncoder = new TextEncoder();
+
+const defaultStringTransformer = {
+  encode: (value: string) => textEncoder.encode(value),
+  decode: (bytes: Uint8Array) => {
+    const found = bytes.findIndex((v) => v === 0);
+    return textDecoder.decode(bytes.slice(0, found));
+  },
+};
 
 export interface RelateOptions {
   offset?: number;
@@ -266,17 +278,20 @@ export class Relater<T extends RelateRules> {
                 }];
               }
               case "string": {
+                const transformer = rule.transformer ??
+                  defaultStringTransformer;
                 return [rule.name, {
                   enumerable: true,
                   get: () => {
-                    const bytes = new Uint8Array(buffer, offset, rule.size);
-                    const found = bytes.findIndex((v) => v === 0);
-                    return textDecoder.decode(bytes.slice(0, found));
+                    return transformer.decode(
+                      new Uint8Array(buffer, offset, rule.size),
+                    );
                   },
                   set: (value: string) => {
-                    const bytes = textEncoder.encode(value);
                     const target = new Uint8Array(buffer, offset, rule.size);
-                    target.set(bytes);
+                    const bytes = transformer.encode(value);
+                    target.fill(0);
+                    target.set(bytes.slice(0, rule.size));
                   },
                 }];
               }
