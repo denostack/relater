@@ -1,135 +1,142 @@
-import { RelatedObject, RelateRules, StringTransformer } from "./types.ts";
+import { defaultStringTransformer } from "./transformer.ts";
+import { DecodeRule, RelateEntries, RelateRule } from "./types.ts";
+
+export interface OffsetArrayBuffer {
+  raw: ArrayBuffer;
+  offset: number;
+}
 
 export interface DecodeOptions {
-  offset?: number;
   littleEndian?: boolean;
 }
 
-const textDecoder = new TextDecoder();
-const textEncoder = new TextEncoder();
-
-const defaultStringTransformer: StringTransformer = {
-  encode: (value: string) => textEncoder.encode(value),
-  decode: (bytes: Uint8Array) => {
-    const found = bytes.findIndex((v) => v === 0);
-    return textDecoder.decode(bytes.slice(0, found));
-  },
-};
-
-function* decodeIterate<T extends RelateRules>(
-  rules: T,
-  buffer: ArrayBuffer,
-  { offset = 0, littleEndian = false }: DecodeOptions = {},
-): Generator<RelatedObject<T>> {
-  const view = new DataView(buffer);
-
-  function _decode(rules: RelateRules) {
-    const decoded = {} as Record<string, unknown>;
-    for (const rule of rules) {
-      let value: unknown;
-      switch (rule.type) {
-        case "f64": {
-          value = view.getFloat64(offset, littleEndian);
-          offset += 8;
-          break;
-        }
-        case "f32": {
-          value = view.getFloat32(offset, littleEndian);
-          offset += 4;
-          break;
-        }
-        case "i64": {
-          value = view.getBigInt64(offset, littleEndian);
-          offset += 8;
-          break;
-        }
-        case "u64": {
-          value = view.getBigUint64(offset, littleEndian);
-          offset += 8;
-          break;
-        }
-        case "i32": {
-          value = view.getInt32(offset, littleEndian);
-          offset += 4;
-          break;
-        }
-        case "u32": {
-          value = view.getUint32(offset, littleEndian);
-          offset += 4;
-          break;
-        }
-        case "i16": {
-          value = view.getInt16(offset, littleEndian);
-          offset += 2;
-          break;
-        }
-        case "u16": {
-          value = view.getUint16(offset, littleEndian);
-          offset += 2;
-          break;
-        }
-        case "i8": {
-          value = view.getInt8(offset);
-          offset += 1;
-          break;
-        }
-        case "u8": {
-          value = view.getUint8(offset);
-          offset += 1;
-          break;
-        }
-        case "string": {
-          const transformer = rule.transformer ??
-            defaultStringTransformer;
-          value = transformer.decode(
-            new Uint8Array(buffer, offset, rule.size),
-          );
-          offset += rule.size;
-          break;
-        }
-        case "object": {
-          value = _decode(rule.of);
-          break;
-        }
-      }
-      decoded[rule.name] = value;
-    }
-    return decoded;
+function _decodeEntries(
+  buffer: OffsetArrayBuffer,
+  entries: RelateEntries,
+  options: DecodeOptions,
+) {
+  const decoded: Record<string, unknown> = {};
+  for (const { name, ...rule } of entries) {
+    decoded[name] = _decode(buffer, rule, options);
   }
-
-  while (offset < buffer.byteLength) {
-    try {
-      yield _decode(rules) as RelatedObject<T>;
-    } catch (e) {
-      if (e instanceof RangeError) {
-        break;
-      }
-      throw e;
-    }
-  }
+  return decoded;
 }
 
-export interface DecodeManyOptions extends DecodeOptions {
-  limit?: number;
-}
-export function decodeMany<T extends RelateRules>(
-  rules: T,
-  buffer: ArrayBuffer,
-  { limit = Infinity, ...options }: DecodeManyOptions = {},
-): RelatedObject<T>[] {
-  const items: RelatedObject<T>[] = [];
-  for (const item of decodeIterate(rules, buffer, options)) {
-    items.push(item);
-    if (items.length >= limit) break;
-  }
-  return items;
-}
-
-export function decode<T extends RelateRules>(
-  rules: T,
-  buffer: ArrayBuffer,
+function _decode<T extends RelateRule>(
+  buffer: OffsetArrayBuffer,
+  rule: T,
   options: DecodeOptions = {},
-): RelatedObject<T> {
-  const items = decodeMany(rules, buffer, { limit: 1, ...options });
-  return items[0];
+): DecodeRule<T> {
+  const view = new DataView(buffer.raw);
+  let value: unknown;
+  switch (rule.type) {
+    case "f64": {
+      value = view.getFloat64(
+        buffer.offset,
+        rule.littleEndian ?? options.littleEndian,
+      );
+      buffer.offset += 8;
+      break;
+    }
+    case "f32": {
+      value = view.getFloat32(
+        buffer.offset,
+        rule.littleEndian ?? options.littleEndian,
+      );
+      buffer.offset += 4;
+      break;
+    }
+    case "i64": {
+      value = view.getBigInt64(
+        buffer.offset,
+        rule.littleEndian ?? options.littleEndian,
+      );
+      buffer.offset += 8;
+      break;
+    }
+    case "u64": {
+      value = view.getBigUint64(
+        buffer.offset,
+        rule.littleEndian ?? options.littleEndian,
+      );
+      buffer.offset += 8;
+      break;
+    }
+    case "i32": {
+      value = view.getInt32(
+        buffer.offset,
+        rule.littleEndian ?? options.littleEndian,
+      );
+      buffer.offset += 4;
+      break;
+    }
+    case "u32": {
+      value = view.getUint32(
+        buffer.offset,
+        rule.littleEndian ?? options.littleEndian,
+      );
+      buffer.offset += 4;
+      break;
+    }
+    case "i16": {
+      value = view.getInt16(
+        buffer.offset,
+        rule.littleEndian ?? options.littleEndian,
+      );
+      buffer.offset += 2;
+      break;
+    }
+    case "u16": {
+      value = view.getUint16(
+        buffer.offset,
+        rule.littleEndian ?? options.littleEndian,
+      );
+      buffer.offset += 2;
+      break;
+    }
+    case "i8": {
+      value = view.getInt8(buffer.offset);
+      buffer.offset += 1;
+      break;
+    }
+    case "u8": {
+      value = view.getUint8(buffer.offset);
+      buffer.offset += 1;
+      break;
+    }
+    case "string": {
+      const transformer = rule.transformer ??
+        defaultStringTransformer;
+      value = transformer.decode(
+        new Uint8Array(buffer.raw, buffer.offset, rule.size),
+      );
+      buffer.offset += rule.size;
+      break;
+    }
+    case "object": {
+      value = _decodeEntries(buffer, rule.of, options);
+      break;
+    }
+    case "array": {
+      const array: unknown[] = [];
+      for (let i = 0; i < rule.size; i++) {
+        array.push(_decode(buffer, rule.of, options));
+      }
+      value = array;
+      break;
+    }
+  }
+  return value as DecodeRule<T>;
+}
+
+export function decode<T extends RelateRule>(
+  buffer: ArrayBuffer | OffsetArrayBuffer,
+  rule: T,
+  options: DecodeOptions = {},
+): DecodeRule<T> {
+  return _decode(
+    buffer instanceof ArrayBuffer ? { raw: buffer, offset: 0 } : buffer,
+    rule,
+    options,
+  );
 }

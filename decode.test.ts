@@ -1,22 +1,25 @@
-import { assertEquals } from "assert/mod.ts";
+import { assertEquals, assertIsError } from "assert/mod.ts";
 
-import { decode, decodeMany } from "./decode.ts";
-import { RelateRules } from "./types.ts";
+import { decode } from "./decode.ts";
+import { RelateRule } from "./types.ts";
 
 Deno.test("decode, decode simple types", () => {
-  const rules = [
-    { name: "i8", type: "i8" },
-    { name: "u8", type: "u8" },
-    { name: "i16", type: "i16" },
-    { name: "u16", type: "u16" },
-    { name: "i32", type: "i32" },
-    { name: "u32", type: "u32" },
-    { name: "i64", type: "i64" },
-    { name: "u64", type: "u64" },
-    { name: "f32", type: "f32" },
-    { name: "f64", type: "f64" },
-    { name: "string", type: "string", size: 16 },
-  ] as const satisfies RelateRules;
+  const rules = {
+    type: "object",
+    of: [
+      { name: "i8", type: "i8" },
+      { name: "u8", type: "u8" },
+      { name: "i16", type: "i16" },
+      { name: "u16", type: "u16" },
+      { name: "i32", type: "i32" },
+      { name: "u32", type: "u32" },
+      { name: "i64", type: "i64" },
+      { name: "u64", type: "u64" },
+      { name: "f32", type: "f32" },
+      { name: "f64", type: "f64" },
+      { name: "string", type: "string", size: 16 },
+    ],
+  } as const satisfies RelateRule;
 
   const buffer = new Uint8Array([
     255,
@@ -77,8 +80,11 @@ Deno.test("decode, decode simple types", () => {
     0,
     0,
     0,
+    0, // dangling
+    0,
+    0,
   ]);
-  const obj = decode(rules, buffer.buffer);
+  const obj = decode(buffer.buffer, rules);
   assertEquals(obj, {
     i8: -1,
     u8: 255,
@@ -94,10 +100,12 @@ Deno.test("decode, decode simple types", () => {
   });
 });
 
-Deno.test("decode, decode many items", () => {
-  const rules = [
-    { name: "i32", type: "i32" },
-  ] as const satisfies RelateRules;
+Deno.test("decode, decode array types", () => {
+  const rules = {
+    type: "array",
+    of: { type: "i32" },
+    size: 2,
+  } as const satisfies RelateRule;
 
   const buffer = new Uint8Array([
     0,
@@ -112,69 +120,52 @@ Deno.test("decode, decode many items", () => {
     0,
     0,
   ]);
-  const items = decodeMany(rules, buffer.buffer);
-  assertEquals(items, [{ i32: 1 }, { i32: 2 }]);
+  const items = decode(buffer.buffer, rules);
+  assertEquals(items, [1, 2]);
 });
 
-Deno.test("decode, decode many items with limit", () => {
-  const rules = [
-    { name: "i32", type: "i32" },
-  ] as const satisfies RelateRules;
+Deno.test("decode, decode array types with error", () => {
+  const rules = {
+    type: "array",
+    of: { type: "i32" },
+    size: 3,
+  } as const satisfies RelateRule;
 
   const buffer = new Uint8Array([
     0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    0,
-    2,
-    0,
-    0,
-    0,
   ]);
-  const items = decodeMany(rules, buffer.buffer, { limit: 1 });
-  assertEquals(items, [{ i32: 1 }]);
-});
 
-Deno.test("decode, relateMany with offset", () => {
-  const rules = [
-    { name: "i32", type: "i32" },
-  ] as const satisfies RelateRules;
-
-  const buffer = new Uint8Array([
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    0,
-    2,
-  ]);
-  const items = decodeMany(rules, buffer.buffer, { offset: 3 });
-  assertEquals(items, [{ i32: 1 }, { i32: 2 }]);
+  try {
+    decode(buffer.buffer, rules);
+  } catch (e) {
+    assertIsError(
+      e,
+      RangeError,
+      "Offset is outside the bounds of the DataView",
+    );
+  }
 });
 
 Deno.test("decode, transform string", () => {
   const textEncoder = new TextEncoder();
   const textDecoder = new TextDecoder();
   const charOffset = "A".charCodeAt(0);
-  const rules = [
-    {
-      name: "string",
-      type: "string",
-      size: 8,
-      transformer: {
-        decode: (value) => textDecoder.decode(value.map((v) => v + charOffset)),
-        encode: (value) => textEncoder.encode(value).map((v) => v - charOffset),
+  const rules = {
+    type: "object",
+    of: [
+      {
+        name: "string",
+        type: "string",
+        size: 8,
+        transformer: {
+          decode: (value) =>
+            textDecoder.decode(value.map((v) => v + charOffset)),
+          encode: (value) =>
+            textEncoder.encode(value).map((v) => v - charOffset),
+        },
       },
-    },
-  ] as const satisfies RelateRules;
+    ],
+  } as const satisfies RelateRule;
 
   const buffer = new Uint8Array([
     0,
@@ -186,21 +177,27 @@ Deno.test("decode, transform string", () => {
     6,
     7,
   ]);
-  const item = decode(rules, buffer.buffer);
+  const item = decode(buffer.buffer, rules);
 
   assertEquals(item, { string: "ABCDEFGH" });
 });
 
 Deno.test("decode, nest types", () => {
-  const point = [
-    { name: "x", type: "u8" },
-    { name: "y", type: "u8" },
-  ] as const satisfies RelateRules;
+  const point = {
+    type: "object",
+    of: [
+      { name: "x", type: "u8" },
+      { name: "y", type: "u8" },
+    ],
+  } as const satisfies RelateRule;
 
-  const rules = [
-    { name: "start", type: "object", of: point },
-    { name: "end", type: "object", of: point },
-  ] as const satisfies RelateRules;
+  const rules = {
+    type: "object",
+    of: [
+      { name: "start", ...point },
+      { name: "end", ...point },
+    ],
+  } as const satisfies RelateRule;
 
   const buffer = new Uint8Array([
     0,
@@ -208,7 +205,7 @@ Deno.test("decode, nest types", () => {
     2,
     3,
   ]);
-  const obj = decode(rules, buffer.buffer);
+  const obj = decode(buffer.buffer, rules);
   assertEquals(obj, {
     start: { x: 0, y: 1 },
     end: { x: 2, y: 3 },
