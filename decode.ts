@@ -1,10 +1,6 @@
+import { OffsetArrayBuffer } from "./offset_array_buffer.ts";
 import { defaultStringTransformer } from "./transformer.ts";
 import { DecodeRule, RelateEntries, RelateRule } from "./types.ts";
-
-export interface OffsetArrayBuffer {
-  raw: ArrayBuffer;
-  offset: number;
-}
 
 export interface DecodeOptions {
   littleEndian?: boolean;

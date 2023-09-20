@@ -2,13 +2,22 @@
  * @module
  */
 
-export { Relater } from "./relater.ts";
+export { Relater, type RelaterOptions } from "./relater.ts";
+
+export { OffsetArrayBuffer } from "./offset_array_buffer.ts";
+export { defaultStringTransformer } from "./transformer.ts";
+export { getSize } from "./size.ts";
+export { decode, type DecodeOptions } from "./decode.ts";
 export type {
-  RelatedObject,
-  RelateFixedSizeRule,
-  RelaterOptions,
+  DecodeRule,
+  RelateEntries,
+  RelateEntry,
   RelateRule,
-  RelateRules,
-  RelateSizeRule,
+  RelateRuleArray,
+  RelateRuleBigInt,
+  RelateRuleMultiByteNumber,
+  RelateRuleNumber,
+  RelateRuleObject,
+  RelateRuleString,
   StringTransformer,
-} from "./relater.ts";
+} from "./types.ts";
