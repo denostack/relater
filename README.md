@@ -21,29 +21,37 @@ Relater seamlessly maps ArrayBuffer content to user-defined objects.
 import { Relater } from "https://deno.land/x/relater/mod.ts";
 
 const relater = new Relater(
-  [
-    { name: "i8", type: "i8" },
-    { name: "u8", type: "u8" },
-    { name: "i32", type: "i32" },
-    { name: "u32", type: "u32" },
-    { name: "i64", type: "i64" },
-    { name: "u64", type: "u64" },
-    { name: "f32", type: "f32" },
-    { name: "f64", type: "f64" },
-  ] as const,
+  {
+    type: "object",
+    of: [
+      { name: "i8", type: "i8" },
+      { name: "u8", type: "u8" },
+      { name: "i16", type: "i16" },
+      { name: "u16", type: "u16" },
+      { name: "i32", type: "i32" },
+      { name: "u32", type: "u32" },
+      { name: "i64", type: "i64" },
+      { name: "u64", type: "u64" },
+      { name: "f32", type: "f32" },
+      { name: "f64", type: "f64" },
+      { name: "string", type: "string", size: 16 },
+    ],
+  } as const satisfies RelateRule,
 );
 
 const buffer = new Uint8Array([/* ... */]);
-const obj = relater.relate(buffer.buffer);
+// decode
+const value = relater.decode(buffer.buffer);
 
-// Get Values
-console.log(obj); // { i8: 0, u8: 0, i32: 0, u32: 0, i64: 0n, u64: 0n }
+console.log(value); // { i8: 0, u8: 0, i32: 0, u32: 0, i64: 0n, u64: 0n }
 
-// Set Values
-obj.i8 = 1;
-obj.u8 = 2;
+value.i8 = 1;
+value.u8 = 2;
 
-console.log(buffer); // Uint8Array(8) [ 1, 2, ... ]
+// encode
+const encoded = relater.encode(value);
+
+console.log(encoded); // Uint8Array(8) [ 1, 2, ... ]
 ```
 
 ### with Node.js & Browser
@@ -75,3 +83,5 @@ import { Relater } from "relater";
 | `i8`     | `number`              | 8-bit signed integer                    |
 | `u8`     | `number`              | 8-bit unsigned integer                  |
 | `string` | `string`              | String type (length is based on buffer) |
+| `object` | `object`              | Object type                             |
+| `array`  | `Array`               | Array type                              |
