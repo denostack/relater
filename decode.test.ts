@@ -147,7 +147,6 @@ Deno.test("decode, decode array types with error", () => {
 });
 
 Deno.test("decode, transform string", () => {
-  const textEncoder = new TextEncoder();
   const textDecoder = new TextDecoder();
   const charOffset = "A".charCodeAt(0);
   const rules = {
@@ -160,8 +159,9 @@ Deno.test("decode, transform string", () => {
         transformer: {
           decode: (value) =>
             textDecoder.decode(value.map((v) => v + charOffset)),
-          encode: (value) =>
-            textEncoder.encode(value).map((v) => v - charOffset),
+          encode: () => {
+            throw new Error("never called");
+          },
         },
       },
     ],

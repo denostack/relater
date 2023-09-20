@@ -1,4 +1,5 @@
 import { decode, DecodeOptions } from "./decode.ts";
+import { encode, EncodeOptions } from "./encode.ts";
 import { OffsetArrayBuffer } from "./offset_array_buffer.ts";
 import { getSize } from "./size.ts";
 import { DecodeRule, RelateRule } from "./types.ts";
@@ -15,6 +16,16 @@ export class Relater<T extends RelateRule> {
 
   get size(): number {
     return getSize(this.rule);
+  }
+
+  encode(
+    value: DecodeRule<T>,
+    options?: EncodeOptions,
+  ): ArrayBuffer {
+    return encode(value, this.rule, {
+      ...this.options,
+      ...options,
+    });
   }
 
   decode(

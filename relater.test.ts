@@ -1,23 +1,26 @@
-import type { Equal, Expect } from "@type-challenges/utils";
 import { assertEquals } from "assert/mod.ts";
 
 import { Relater } from "./relater.ts";
+import { RelateRule } from "./types.ts";
 
-Deno.test("Relater, get related values", () => {
+Deno.test("Relater, decode simple object", () => {
   const relater = new Relater(
-    [
-      { name: "i8", type: "i8" },
-      { name: "u8", type: "u8" },
-      { name: "i16", type: "i16" },
-      { name: "u16", type: "u16" },
-      { name: "i32", type: "i32" },
-      { name: "u32", type: "u32" },
-      { name: "i64", type: "i64" },
-      { name: "u64", type: "u64" },
-      { name: "f32", type: "f32" },
-      { name: "f64", type: "f64" },
-      { name: "string", type: "string", size: 16 },
-    ] as const,
+    {
+      type: "object",
+      of: [
+        { name: "i8", type: "i8" },
+        { name: "u8", type: "u8" },
+        { name: "i16", type: "i16" },
+        { name: "u16", type: "u16" },
+        { name: "i32", type: "i32" },
+        { name: "u32", type: "u32" },
+        { name: "i64", type: "i64" },
+        { name: "u64", type: "u64" },
+        { name: "f32", type: "f32" },
+        { name: "f64", type: "f64" },
+        { name: "string", type: "string", size: 16 },
+      ],
+    } as const satisfies RelateRule,
   );
 
   const buffer = new Uint8Array([
@@ -80,7 +83,7 @@ Deno.test("Relater, get related values", () => {
     0,
     0,
   ]);
-  const obj = relater.relate(buffer.buffer);
+  const obj = relater.decode(buffer.buffer);
   assertEquals(obj, {
     i8: -1,
     u8: 255,
@@ -94,49 +97,29 @@ Deno.test("Relater, get related values", () => {
     f64: 3.141592,
     string: "hello world!",
   });
-
-  type Test = Expect<
-    Equal<
-      typeof obj,
-      {
-        i8: number;
-        u8: number;
-        i16: number;
-        u16: number;
-        i32: number;
-        u32: number;
-        i64: bigint;
-        u64: bigint;
-        f32: number;
-        f64: number;
-        string: string;
-      }
-    >
-  >;
 });
 
-Deno.test("Relater, set related values", () => {
+Deno.test("Relater, encode simple object", () => {
   const relater = new Relater(
-    [
-      { name: "i8", type: "i8" },
-      { name: "u8", type: "u8" },
-      { name: "i16", type: "i16" },
-      { name: "u16", type: "u16" },
-      { name: "i32", type: "i32" },
-      { name: "u32", type: "u32" },
-      { name: "i64", type: "i64" },
-      { name: "u64", type: "u64" },
-      { name: "f32", type: "f32" },
-      { name: "f64", type: "f64" },
-      { name: "string", type: "string", size: 16 },
-    ] as const,
+    {
+      type: "object",
+      of: [
+        { name: "i8", type: "i8" },
+        { name: "u8", type: "u8" },
+        { name: "i16", type: "i16" },
+        { name: "u16", type: "u16" },
+        { name: "i32", type: "i32" },
+        { name: "u32", type: "u32" },
+        { name: "i64", type: "i64" },
+        { name: "u64", type: "u64" },
+        { name: "f32", type: "f32" },
+        { name: "f64", type: "f64" },
+        { name: "string", type: "string", size: 16 },
+      ],
+    } as const satisfies RelateRule,
   );
 
-  const buffer = new Uint8Array(58);
-  const obj = relater.relate(buffer.buffer);
-
-  // Set!
-  Object.assign(obj, {
+  const encoded = relater.encode({
     i8: -1,
     u8: 255,
     i16: -2,
@@ -145,13 +128,12 @@ Deno.test("Relater, set related values", () => {
     u32: 4294967293,
     i64: -4n,
     u64: 18446744073709551612n,
-    f32: 3.14,
+    f32: 3.140000104904175,
     f64: 3.141592,
     string: "hello world!",
   });
-
   assertEquals(
-    buffer,
+    new Uint8Array(encoded),
     new Uint8Array([
       255,
       255,
@@ -213,121 +195,4 @@ Deno.test("Relater, set related values", () => {
       0,
     ]),
   );
-});
-
-Deno.test("Relater, relateMany", () => {
-  const relater = new Relater(
-    [
-      { name: "i32", type: "i32" },
-    ] as const,
-  );
-
-  const buffer = new Uint8Array([
-    0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    0,
-    2,
-    0,
-    0,
-    0,
-  ]);
-  const items = relater.relateMany(buffer.buffer);
-  assertEquals(items, [{ i32: 1 }, { i32: 2 }]);
-});
-
-Deno.test("Relater, relateMany with limit", () => {
-  const relater = new Relater(
-    [
-      { name: "i32", type: "i32" },
-    ] as const,
-  );
-
-  const buffer = new Uint8Array([
-    0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    0,
-    2,
-    0,
-    0,
-    0,
-  ]);
-  const items = relater.relateMany(buffer.buffer, { limit: 1 });
-  assertEquals(items, [{ i32: 1 }]);
-});
-
-Deno.test("Relater, relateMany with offset", () => {
-  const relater = new Relater(
-    [
-      { name: "i32", type: "i32" },
-    ] as const,
-  );
-
-  const buffer = new Uint8Array([
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    1,
-    0,
-    0,
-    0,
-    2,
-  ]);
-  const items = relater.relateMany(buffer.buffer, { offset: 3 });
-  assertEquals(items, [{ i32: 1 }, { i32: 2 }]);
-});
-
-Deno.test("Relater, transform string", () => {
-  const textEncoder = new TextEncoder();
-  const textDecoder = new TextDecoder();
-  const charOffset = "A".charCodeAt(0);
-  const relater = new Relater(
-    [
-      {
-        name: "string",
-        type: "string",
-        size: 8,
-        transformer: {
-          decode: (value) =>
-            textDecoder.decode(value.map((v) => v + charOffset)),
-          encode: (value) =>
-            textEncoder.encode(value).map((v) => v - charOffset),
-        },
-      },
-    ] as const,
-  );
-
-  const buffer = new Uint8Array([
-    0,
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    7,
-  ]);
-  const item = relater.relate(buffer.buffer);
-
-  // Get
-  assertEquals(item, { string: "ABCDEFGH" });
-
-  // Set
-  Object.assign(item, { string: "HELLO" }); // shorter than 8
-
-  assertEquals(buffer, new Uint8Array([7, 4, 11, 11, 14, 0, 0, 0]));
-
-  Object.assign(item, { string: "HELLOHELLOHELLO" }); // longer than 8
-
-  assertEquals(buffer, new Uint8Array([7, 4, 11, 11, 14, 7, 4, 11]));
 });
