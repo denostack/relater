@@ -1,5 +1,5 @@
+import type { Equal, Expect } from "@type-challenges/utils";
 import { assertEquals, assertIsError } from "assert/mod.ts";
-
 import { decode } from "./decode.ts";
 import { RelateRule, StringTransformer } from "./types.ts";
 
@@ -96,6 +96,28 @@ Deno.test("decode, decode simple types", () => {
     0,
   ]);
   const obj = decode(buffer.buffer, rules);
+
+  type TestCases = [
+    Expect<
+      Equal<
+        typeof obj,
+        {
+          i8: number;
+          u8: number;
+          i16: number;
+          u16: number;
+          i32: number;
+          u32: number;
+          i64: bigint;
+          u64: bigint;
+          f32: number;
+          f64: number;
+          string: string;
+        }
+      >
+    >,
+  ];
+
   assertEquals(obj, {
     i8: -1,
     u8: 255,
