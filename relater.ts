@@ -8,7 +8,7 @@ export interface RelaterOptions {
   readonly littleEndian?: boolean;
 }
 
-export class Relater<T extends RelateRule> {
+export class Relater<T extends RelateRule, TValue = DecodeRule<T>> {
   constructor(
     public rule: T,
     public options: RelaterOptions = {},
@@ -19,7 +19,7 @@ export class Relater<T extends RelateRule> {
   }
 
   encode(
-    value: DecodeRule<T>,
+    value: TValue,
     options?: EncodeOptions,
   ): ArrayBuffer {
     return encode(value, this.rule, {
@@ -31,9 +31,7 @@ export class Relater<T extends RelateRule> {
   decode(
     buffer: ArrayBuffer | OffsetArrayBuffer,
     options?: DecodeOptions,
-  ): DecodeRule<
-    T
-  > {
+  ): TValue {
     return decode(buffer, this.rule, {
       ...this.options,
       ...options,

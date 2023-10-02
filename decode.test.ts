@@ -1,7 +1,18 @@
 import { assertEquals, assertIsError } from "assert/mod.ts";
 
 import { decode } from "./decode.ts";
-import { RelateRule } from "./types.ts";
+import { RelateRule, StringTransformer } from "./types.ts";
+
+const textDecoder = new TextDecoder();
+const textEncoder = new TextEncoder();
+
+export const CustomStringTransformer: StringTransformer = {
+  encode: (value: string) => textEncoder.encode(value).map((v) => v + 1),
+  decode: (bytes: Uint8Array) => {
+    const found = bytes.findIndex((v) => v === 0);
+    return textDecoder.decode(bytes.map((v) => v - 1).slice(0, found));
+  },
+};
 
 Deno.test("decode, decode simple types", () => {
   const rules = {
@@ -194,12 +205,26 @@ Deno.test("decode, nest types", () => {
   const rules = {
     type: "object",
     of: [
+      {
+        name: "name",
+        type: "string",
+        size: 8,
+        transformer: CustomStringTransformer,
+      },
       { name: "start", ...point },
       { name: "end", ...point },
     ],
   } as const satisfies RelateRule;
 
   const buffer = new Uint8Array([
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    0,
     0,
     1,
     2,
@@ -207,6 +232,7 @@ Deno.test("decode, nest types", () => {
   ]);
   const obj = decode(buffer.buffer, rules);
   assertEquals(obj, {
+    name: "0123456",
     start: { x: 0, y: 1 },
     end: { x: 2, y: 3 },
   });

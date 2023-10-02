@@ -19,10 +19,13 @@ function _encodeEntries(
   }
 }
 
-function _encode<T extends RelateRule>(
+/**
+ * @internal
+ */
+export function _encode(
   buffer: OffsetArrayBuffer,
-  value: DecodeRule<T>,
-  rule: T,
+  value: unknown,
+  rule: RelateRule,
   options: EncodeOptions = {},
 ) {
   const view = new DataView(buffer.raw);
@@ -139,11 +142,11 @@ function _encode<T extends RelateRule>(
       break;
     }
   }
-  return value as DecodeRule<T>;
+  return value;
 }
 
-export function encode<T extends RelateRule>(
-  value: DecodeRule<T>,
+export function encode<T extends RelateRule, TValue = DecodeRule<T>>(
+  value: TValue,
   rule: T,
   options: EncodeOptions = {},
 ): ArrayBuffer {

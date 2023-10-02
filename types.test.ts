@@ -73,6 +73,19 @@ Deno.test("types, estimate simple types", () => {
         string
       >
     >,
+    Expect<
+      Equal<
+        DecodeRule<{
+          type: "string";
+          size: 16;
+          transformer: {
+            encode: (value: string) => Uint8Array;
+            decode: (value: Uint8Array) => string;
+          };
+        }>,
+        string
+      >
+    >,
   ];
 });
 
@@ -163,6 +176,15 @@ Deno.test("types, estimate nested object", () => {
             type: "object";
             of: [
               {
+                name: "name";
+                type: "string";
+                size: 10;
+                transformer: {
+                  encode: (value: string) => Uint8Array;
+                  decode: (value: Uint8Array) => string;
+                };
+              },
+              {
                 name: "from";
                 type: "object";
                 of: [{ name: "x"; type: "u8" }, { name: "y"; type: "u8" }];
@@ -176,6 +198,7 @@ Deno.test("types, estimate nested object", () => {
           }
         >,
         {
+          name: string;
           from: { x: number; y: number };
           to: { x: number; y: number };
         }

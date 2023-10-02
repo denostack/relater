@@ -54,9 +54,6 @@ export interface RelateRuleArray {
 }
 
 type MergeObject<TObj> = { [key in keyof TObj]: TObj[key] };
-type DeepWritable<TObj> = {
-  -readonly [P in keyof TObj]: DeepWritable<TObj[P]>;
-};
 
 // https://stackoverflow.com/a/50375286
 // deno-lint-ignore no-explicit-any
@@ -65,7 +62,7 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends
 
 type DecodeEntries<T> = MergeObject<
   UnionToIntersection<
-    DeepWritable<T> extends (infer R)[] ? DecodeEntry<R> : never
+    T extends (infer R)[] ? DecodeEntry<R> : never
   >
 >;
 type DecodeEntry<T> = T extends RelateEntry

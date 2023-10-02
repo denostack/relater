@@ -18,11 +18,11 @@ function _decodeEntries(
   return decoded;
 }
 
-function _decode<T extends RelateRule>(
+function _decode(
   buffer: OffsetArrayBuffer,
-  rule: T,
+  rule: RelateRule,
   options: DecodeOptions = {},
-): DecodeRule<T> {
+): unknown {
   const view = new DataView(buffer.raw);
   let value: unknown;
   switch (rule.type) {
@@ -122,17 +122,17 @@ function _decode<T extends RelateRule>(
       break;
     }
   }
-  return value as DecodeRule<T>;
+  return value;
 }
 
-export function decode<T extends RelateRule>(
+export function decode<T extends RelateRule, TValue = DecodeRule<T>>(
   buffer: ArrayBuffer | OffsetArrayBuffer,
   rule: T,
   options: DecodeOptions = {},
-): DecodeRule<T> {
+): TValue {
   return _decode(
     buffer instanceof ArrayBuffer ? { raw: buffer, offset: 0 } : buffer,
     rule,
     options,
-  );
+  ) as TValue;
 }
